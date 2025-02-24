@@ -70,6 +70,48 @@ const Users = class Users {
       }
     })
   }
+  updateById() {
+    this.app.put('/user/:id', this.authenticateToken, (req, res) => {
+      try {
+        // Ex. n'autoriser que le rôle 'coach' à modifier
+        if (!req.user || req.user.role !== 'coach') {
+          return res.status(401).json({
+            code: 401,
+            message: 'Unauthorized - you are not a coach'
+          });
+        }
+
+        this.UserModel.findByIdAndUpdate(
+          req.params.id,
+          req.body,
+          { new: true } // pour renvoyer le user mis à jour
+        )
+          .then((updatedUser) => {
+            if (updatedUser) {
+              res.status(200).json(updatedUser);
+            } else {
+              res.status(404).json({
+                code: 404,
+                message: 'User not found'
+              });
+            }
+          })
+          .catch((err) => {
+            console.error(`[ERROR] users/update -> ${err}`);
+            res.status(500).json({
+              code: 500,
+              message: 'Internal Server Error'
+            });
+          });
+      } catch (err) {
+        console.error(`[ERROR] users/update -> ${err}`);
+        res.status(400).json({
+          code: 400,
+          message: 'Bad request'
+        });
+      }
+    });
+  }
 
   /**
    * Create
@@ -102,6 +144,7 @@ const Users = class Users {
     this.create()
     this.showById()
     this.deleteById()
+    this.updateById();
   }
 }
 
